@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>洛韵寻踪｜洛阳3D文物·AI剧本杀文旅平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root{--black:#050403;--dark:#0d0b0a;--gold:#d4af37;--gold-light:#e9c874;--red:#9b2226;--grey:#b8b0a6;--text:#e8e2d9;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:"思源宋体","Noto Serif SC",serif;background:var(--black);color:var(--text);overflow-x:hidden;}
+        header{width:100%;height:72px;background:rgba(5,4,3,0.95);border-bottom:1px solid rgba(212,175,55,0.2);position:fixed;top:0;z-index:9999;backdrop-filter:blur(8px);}
+        .container{width:92%;margin:0 auto;}
+        .nav{height:100%;display:flex;justify-content:space-between;align-items:center;}
+        .logo{font-size:28px;color:var(--gold);letter-spacing:4px;font-weight:600;}
+        .nav-menu{display:flex;gap:45px;}
+        .nav-menu a{color:var(--grey);text-decoration:none;font-size:15px;transition:0.3s;}
+        .nav-menu a:hover{color:var(--gold);}
+        .hero{width:100%;height:100vh;padding-top:72px;background:linear-gradient(rgba(0,0,0,0.7),rgba(5,4,3,0.9)),url(https://img1.baidu.com/it/u=27896239292,1105605226&fm=253&fmt=auto) center/cover no-repeat;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;position:relative;}
+        .hero h1{font-size:62px;color:var(--gold);letter-spacing:8px;margin-bottom:24px;}
+        .hero p{font-size:17px;color:var(--grey);line-height:2.2;max-width:750px;}
+        .btn-gold{margin-top:40px;padding:15px 50px;border:1px solid var(--gold);color:var(--gold);background:transparent;border-radius:2px;letter-spacing:2px;cursor:pointer;transition:0.4s ease;}
+        .btn-gold:hover{background:var(--gold);color:#000;box-shadow:0 0 20px rgba(212,175,55,0.3);}
+        section{padding:120px 0;}
+        .title{text-align:center;font-size:34px;color:var(--gold);margin-bottom:70px;position:relative;}
+        .title::after{content:"";width:90px;height:2px;background:var(--gold);position:absolute;left:50%;transform:translateX(-50%);bottom:-18px;}
+        .relic-3d-wrap{display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:center;}
+        #threeCanvas{width:100%;height:450px;border:1px solid rgba(212,175,55,0.2);border-radius:12px;background:#090807;}
+        .relic-desc h3{color:var(--gold);font-size:26px;margin-bottom:20px;}
+        .relic-desc p{color:var(--grey);line-height:2;font-size:16px;}
+        .relic-history{margin-top:20px;padding:20px;background:rgba(212,175,55,0.05);border:1px solid rgba(212,175,55,0.1);border-radius:8px;}
+        .relic-history h4{color:var(--gold-light);margin-bottom:10px;font-size:18px;}
+        .relic-history p{color:#ccc;line-height:1.9;font-size:15px;}
+        .relic-list{margin-top:25px;display:flex;gap:15px;flex-wrap:wrap;}
+        .relic-item{padding:10px 20px;border:1px solid rgba(212,175,55,0.3);border-radius:20px;font-size:14px;cursor:pointer;transition:0.3s;}
+        .relic-item.active{background:var(--gold);color:#000;}
+        .relic-item:hover{border-color:var(--gold);color:var(--gold);}
+        .ai-container{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;background:rgba(255,255,255,0.03);border:1px solid rgba(212,175,55,0.15);border-radius:14px;padding:45px;}
+        .ai-chat-box{height:420px;background:#0b0a09;border-radius:10px;border:1px solid rgba(212,175,55,0.25);padding:20px;display:flex;flex-direction:column;}
+        .chat-content{flex:1;overflow-y:auto;margin-bottom:15px;}
+        .chat-content::-webkit-scrollbar{width:4px;background:#222;}
+        .chat-content::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px;}
+        .msg-ai{color:var(--gold);margin:8px 0;padding:8px 12px;background:rgba(212,175,55,0.1);border-radius:6px;display:inline-block;max-width:80%;}
+        .msg-user{color:#fff;margin:8px 0;padding:8px 12px;background:rgba(255,255,255,0.1);border-radius:6px;display:inline-block;max-width:80%;float:right;}
+        .chat-input-wrap{display:flex;gap:10px;width:100%;margin-top:10px;}
+        .chat-input{flex:1;height:42px;background:#151312;border:1px solid rgba(212,175,55,0.3);color:#fff;padding:0 12px;border-radius:4px;outline:none;}
+        .send-btn{padding:0 20px;height:42px;background:var(--gold);color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;transition:0.3s;}
+        .send-btn:hover{background:var(--gold-light);}
+        .script-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:35px;}
+        .script-card{background:rgba(255,255,255,0.03);border:1px solid rgba(212,175,55,0.18);border-radius:12px;padding:40px;transition:0.3s;}
+        .script-card:hover{border-color:var(--gold);transform:translateY(-8px);}
+        .script-card h3{color:var(--gold);margin-bottom:18px;font-size:22px;}
+        .script-card p{color:var(--grey);line-height:2;margin-bottom:25px;}
+        .multi-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;}
+        footer{padding:60px 0;text-align:center;border-top:1px solid rgba(212,175,55,0.15);color:var(--grey);}
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container nav">
+            <div class="logo">洛韵寻踪</div>
+            <div class="nav-menu">
+                <a href="#home">首页</a>
+                <a href="#relic3d">3D文物馆</a>
+                <a href="#ai">AI智能助手</a>
+                <a href="#script">文物剧本杀</a>
+                <a href="#travel">洛阳文旅</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <h1>洛韵千年 · 溯源神都</h1>
+        <p>依托WebGL三维技术，沉浸式360°观赏洛阳馆藏文物<br>专属AI文旅智库实时答疑，以十三朝历史为基底<br>自由选取文物定制古风剧本杀，线上多人联机协作解谜<br>游玩结束自动生成战绩、结局与历史文化深度复盘</p>
+        <button class="btn-gold" onclick="scrollToView('relic3d')">即刻探索</button>
+    </section>
+
+    <section id="relic3d" class="container">
+        <h2 class="title">三维文物 · 全景观赏</h2>
+        <div class="relic-3d-wrap">
+            <div id="threeCanvas"></div>
+            <div class="relic-desc">
+                <h3 id="relicTitle">唐三彩骆驼载乐俑</h3>
+                <p id="relicIntro">唐三彩骆驼载乐俑为唐代盛唐时期文物，洛阳出土同类器物为唐代唐三彩巅峰之作，是丝路文化的实物见证。</p>
+                <div class="relic-history" id="relicHistory">
+                    <h4>文物历史详情</h4>
+                    <p>该文物出土于洛阳唐代墓葬，距今已有1300余年历史，属唐代低温釉陶器，以黄、绿、白三色为主釉。骆驼昂首嘶鸣，背上载有多位乐伎与舞者，完美还原了盛唐时期丝绸之路商旅往来、胡汉文化交融的繁荣景象，是研究唐代乐舞、交通、商贸、手工业的珍贵实物资料，也印证了洛阳作为丝路东方起点的重要地位。</p>
+                </div>
+                <div class="relic-list">
+                    <div class="relic-item active" onclick="changeRelic('sancai')">唐三彩骆驼载乐俑</div>
+                    <div class="relic-item" onclick="changeRelic('bronze')">二里头青铜爵</div>
+                    <div class="relic-item" onclick="changeRelic('stone')">龙门石窟卢舍那大佛</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ai" class="container">
+        <h2 class="title">AI文物专属智库</h2>
+        <div class="ai-container">
+            <div class="ai-info">
+                <h3 style="color:var(--gold);font-size:24px;margin-bottom:20px;">一问知河洛 · 一语晓千年</h3>
+                <p style="color:var(--grey);line-height:2.1;">内置洛阳博物馆、龙门石窟、二里头遗址、隋唐遗址专属知识库。<br>支持文物年代、出土背景、历史典故、朝代脉络、剧本杀玩法全范围解答。<br>全程古风话术，贴合网站历史高级质感，趣味科普、通俗易懂。</p>
+            </div>
+            <div class="ai-chat-box">
+                <div class="chat-content" id="chatBox">
+                    <div class="msg-ai">洛韵AI：阁下安好，可随意问询洛阳文物与历史。</div>
+                </div>
+                <div class="chat-input-wrap">
+                    <input class="chat-input" id="aiInput" placeholder="输入问题，向AI提问……">
+                    <button class="send-btn" onclick="sendAiMsg()">发送</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="script" class="container">
+        <h2 class="title">文物剧本杀 · 沉浸式古风解谜</h2>
+        <div class="script-grid">
+            <div class="script-card">
+                <h3>📜 全局历史剧本生成</h3>
+                <p>AI整合魏晋、隋唐、东周、北魏洛阳历史事件，自动生成悬疑、权谋、探案类完整剧本，自带人物、线索、凶案、多重结局。</p>
+                <button class="btn-gold" onclick="autoScript()">一键生成剧本</button>
+            </div>
+            <div class="script-card">
+                <h3>🏺 自选文物定制剧本</h3>
+                <p>勾选心仪文物，AI围绕该文物的出土故事、历史传说、时代背景，一对一量身定制专属限定剧本，独一无二不可复刻。</p>
+                <button class="btn-gold" onclick="customScript()">选择文物定制</button>
+            </div>
+        </div>
+        <div class="multi-grid">
+            <div class="script-card">
+                <h3>👥 线上多人协作联机</h3>
+                <p>创建专属房间、设置人数、邀请好友组队，多人同步搜证、公聊、私聊、投凶，完整复刻线下剧本杀流程。</p>
+                <button class="btn-gold">创建联机房间</button>
+            </div>
+            <div class="script-card">
+                <h3>📊 对局结果 & 历史复盘</h3>
+                <p>游戏结束自动结算：推理正确率、任务完成度、解锁结局，附带文物历史解析、冷知识拓展，娱乐与文化传播结合。</p>
+                <button class="btn-gold">查看复盘演示</button>
+            </div>
+        </div>
+    </section>
+
+    <section id="travel" class="container" style="text-align:center;">
+        <h2 class="title">神都全域文旅指南</h2>
+        <p style="color:var(--grey);max-width:800px;margin:0 auto;line-height:2.2;">整合应天门、明堂、白马寺、隋唐大运河、洛阳博物馆等核心文旅资源，<br>提供线上云游、展馆预约、路线规划、古都人文讲解，<br>以数字文旅形式，传承洛阳十三朝文明。</p>
+        <button class="btn-gold" style="margin-top:35px;">查看全域攻略</button>
+    </section>
+
+    <footer>
+        <p>洛韵寻踪 · 洛阳数字文旅3D体验平台</p>
+        <p style="margin-top:12px;font-size:13px;">三维文物展示｜AI智能问答｜文物定制剧本杀｜多人联机解谜｜历史文化复盘</p>
+    </footer>
+
+    <script>
+        function scrollToView(id){document.getElementById(id).scrollIntoView({behavior:"smooth"});}
+
+        // ========== 3D场景：内置几何体（无外部模型，本地直接看） ==========
+        let scene,camera,renderer,controls,currentMesh;
+
+        // 文物造型几何体（仿唐三彩、青铜爵、大佛）
+        const relicShapes={
+            sancai:function(){
+                const group=new THREE.Group();
+                // 骆驼身体
+                const body=new THREE.Mesh(new THREE.CylinderGeometry(1,1.2,3,32),new THREE.MeshPhongMaterial({color:0xd4af37}));
+                body.position.y=1.5;
+                // 骆驼头
+                const head=new THREE.Mesh(new THREE.SphereGeometry(0.8,16,16),new THREE.MeshPhongMaterial({color:0xd4af37}));
+                head.position.set(0,3.5,1);
+                // 乐俑
+                const musician=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,1.5,16),new THREE.MeshPhongMaterial({color:0xe9c874}));
+                musician.position.set(0,2.5,0);
+                group.add(body,head,musician);
+                return group;
+            },
+            bronze:function(){
+                const group=new THREE.Group();
+                // 爵杯身
+                const cup=new THREE.Mesh(new THREE.CylinderGeometry(0.8,0.3,2,32),new THREE.MeshPhongMaterial({color:0xb8860b}));
+                cup.position.y=1;
+                // 爵足
+                const leg1=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,1.2,8),new THREE.MeshPhongMaterial({color:0xb8860b}));
+                leg1.position.set(-0.5,-0.6,0);
+                const leg2=leg1.clone();leg2.position.set(0.5,-0.6,0);
+                const leg3=leg1.clone();leg3.position.set(0,-0.6,0.5);
+                group.add(cup,leg1,leg2,leg3);
+                return group;
+            },
+            stone:function(){
+                const group=new THREE.Group();
+                // 佛头
+                const head=new THREE.Mesh(new THREE.SphereGeometry(2,32,32),new THREE.MeshPhongMaterial({color:0x8b7355}));
+                head.position.y=2;
+                // 佛身
+                const body=new THREE.Mesh(new THREE.CylinderGeometry(1.5,2,3,32),new THREE.MeshPhongMaterial({color:0x8b7355}));
+                body.position.y=-0.5;
+                group.add(head,body);
+                return group;
+            }
+        };
+
+        const relicData={
+            sancai:{title:"唐三彩骆驼载乐俑",intro:"唐三彩骆驼载乐俑为唐代盛唐时期文物，洛阳出土同类器物为唐代唐三彩巅峰之作，是丝路文化的实物见证。",history:"该文物出土于洛阳唐代墓葬，距今已有1300余年历史，属唐代低温釉陶器，以黄、绿、白三色为主釉。骆驼昂首嘶鸣，背上载有多位乐伎与舞者，完美还原了盛唐时期丝绸之路商旅往来、胡汉文化交融的繁荣景象，是研究唐代乐舞、交通、商贸、手工业的珍贵实物资料，也印证了洛阳作为丝路东方起点的重要地位。"},
+            bronze:{title:"二里头青铜爵",intro:"二里头青铜爵出土于洛阳偃师二里头遗址，是中国最早的青铜礼器之一，被誉为“华夏第一爵”。",history:"该文物距今约3800-3500年，属夏代晚期青铜酒器，是中国青铜文明的开端。二里头遗址为夏代都城遗址，青铜爵的出土印证了洛阳作为华夏第一王都的历史地位，其精湛的铸造工艺，标志着中国早期青铜手工业的成熟，也是夏代礼乐制度形成的核心物证。"},
+            stone:{title:"龙门石窟卢舍那大佛",intro:"卢舍那大佛为龙门石窟核心造像，位于洛阳龙门西山南部山腰，是武则天时期主持开凿的佛教造像。",history:"大佛开凿于唐代唐高宗咸亨三年，通高17.14米，头高4米，是龙门石窟中艺术水平最高、规模最大的造像。卢舍那意为“光明普照”，佛像面容饱满端庄，融合了唐代审美与佛教艺术精髓，见证了洛阳作为唐代佛教文化中心的辉煌，也是中国古代石刻艺术的巅峰之作，2000年被列入世界文化遗产。"}
+        };
+
+        function init3D(){
+            const container=document.getElementById("threeCanvas");
+            scene=new THREE.Scene();
+            camera=new THREE.PerspectiveCamera(45,container.clientWidth/container.clientHeight,0.1,1000);
+            camera.position.z=8;
+
+            renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+            renderer.setSize(container.clientWidth,container.clientHeight);
+            renderer.setClearColor(0x090807);
+            container.appendChild(renderer.domElement);
+
+            controls=new THREE.OrbitControls(camera,renderer.domElement);
+            controls.enableDamping=true;controls.enableZoom=true;controls.enableRotate=true;
+
+            const dirLight=new THREE.DirectionalLight(0xffffff,1);dirLight.position.set(5,5,5);scene.add(dirLight);
+            const ambLight=new THREE.AmbientLight(0x404040,0.5);scene.add(ambLight);
+
+            currentMesh=relicShapes.sancai();
+            scene.add(currentMesh);
+            animate();
+        }
+
+        function changeRelic(type){
+            document.querySelectorAll(".relic-item").forEach(el=>el.classList.remove("active"));
+            event.target.classList.add("active");
+            scene.remove(currentMesh);
+            currentMesh=relicShapes[type]();
+            scene.add(currentMesh);
+            const data=relicData[type];
+            document.getElementById("relicTitle").innerText=data.title;
+            document.getElementById("relicIntro").innerText=data.intro;
+            document.getElementById("relicHistory").innerHTML=`<h4>文物历史详情</h4><p>${data.history}</p>`;
+        }
+
+        function animate(){
+            requestAnimationFrame(animate);
+            if(currentMesh)currentMesh.rotation.y+=0.005;
+            controls.update();
+            renderer.render(scene,camera);
+        }
+        init3D();
+
+        // ========== AI对话 ==========
+        const aiLib={
+            "唐三彩":relicData.sancai.history,"青铜爵":relicData.bronze.history,"卢舍那大佛":relicData.stone.history,
+            "龙门石窟":"龙门石窟坐落洛阳伊河两岸，始凿北魏，唐代鼎盛，现存十万余尊造像，为世界文化遗产，是洛阳最具代表性的历史文化地标。",
+            "洛阳历史":"洛阳先后有十三朝建都，华夏文明发祥地，夏商周、汉魏、隋唐皆以此为核心都城，是中国建都最早、历时最长、朝代最多的城市。",
+            "剧本杀":"本网站剧本杀全部依托洛阳真实文物与历史改编，支持单人体验、多人联机、文物定制专属剧本，在解谜中学习洛阳历史。"
+        };
+
+        const aiInput=document.getElementById("aiInput");
+        const chatBox=document.getElementById("chatBox");
+
+        function sendAiMsg(){
+            let val=aiInput.value.trim();if(!val)return;
+            chatBox.innerHTML+=`<div class="msg-user">我：${val}</div>`;
+            let res="河洛文脉浩瀚，此问可结合洛阳馆藏文物、古都沿革进一步为你详解。";
+            for(let key in aiLib){if(val.includes(key)){res=aiLib[key];break;}}
+            setTimeout(()=>{chatBox.innerHTML+=`<div class="msg-ai">洛韵AI：${res}</div>`;chatBox.scrollTop=chatBox.scrollHeight;},500);
+            aiInput.value="";
+        }
+
+        aiInput.addEventListener("keydown",function(e){if(e.key==="Enter")sendAiMsg();});
+
+        function autoScript(){alert("✅ 已为你生成【隋唐洛阳·明堂谜案】完整历史剧本\n包含：故事背景、人物剧本、线索卡、推理流程、双结局设定");}
+        function customScript(){alert("🏺 进入文物选择页\n可自选：唐三彩骆驼载乐俑、二里头青铜爵、卢舍那大佛，AI将为你定制专属限定剧本");}
+    </script>
+</body>
+</html>
